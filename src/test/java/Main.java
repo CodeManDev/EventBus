@@ -1,7 +1,7 @@
 import dev.codeman.eventbus.Event;
 import dev.codeman.eventbus.EventBus;
 import dev.codeman.eventbus.Listener;
-import dev.codeman.eventbus.Handler;
+import dev.codeman.eventbus.EventHandler;
 
 import java.util.Arrays;
 
@@ -25,7 +25,7 @@ public enum Main {
         for (int j = 0; j < epochs; j++) {
             final long current = System.nanoTime();
             for (int i = 0; i < iterations; i++) {
-                INSTANCE.eventBus.call(new TestEvent());
+                INSTANCE.eventBus.publish(new TestEvent());
             }
             final double end = (System.nanoTime() - current) / 1000000.0;
             times[j] = end;
@@ -39,7 +39,7 @@ public enum Main {
         INSTANCE.eventBus.unsubscribe(INSTANCE);
     }
 
-    @Handler
+    @EventHandler
     public Listener<TestEvent> testListener = event -> {};
 
     public static class TestEvent extends Event {}
