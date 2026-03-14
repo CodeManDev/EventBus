@@ -2,10 +2,10 @@ package dev.codeman.eventbus;
 
 import java.lang.reflect.Field;
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class EventBus {
-    private final CopyOnWriteArrayList<ListenerWrapper<? extends Event>> listeners = new CopyOnWriteArrayList<>();
+    private final Queue<ListenerWrapper<? extends Event>> listeners = new PriorityQueue<>();
+    private ListenerWrapper<?>[] cache = new ListenerWrapper[0];
 
     /**
      * Call all listeners for the given event.
@@ -13,7 +13,7 @@ public class EventBus {
      * @param event The event to call listeners for.
      */
     public void publish(Event event) {
-        for (ListenerWrapper<? extends Event> listenerWrapper : listeners) {
+        for (ListenerWrapper<? extends Event> listenerWrapper : this.cache) {
             if (event.getClass() != listenerWrapper.getType())
                 continue;
 
@@ -32,9 +32,9 @@ public class EventBus {
             if (!field.isAnnotationPresent(EventHandler.class) || !field.getType().isAssignableFrom(Listener.class))
                 continue;
             if (!field.isAccessible()) field.setAccessible(true);
-            listeners.add(new ListenerWrapper<>(object, field));
+            this.listeners.add(new ListenerWrapper<>(object, field));
         }
-        listeners.sort(Comparator.comparingInt(ListenerWrapper::getPriority));
+        this.cache = this.listeners.toArray(new ListenerWrapper<?>[0]);
     }
 
     /**
@@ -43,7 +43,8 @@ public class EventBus {
      * @param object The class to unsubscribe.
      */
     public void unsubscribe(Object object) {
-        listeners.removeIf(listener -> listener.getParent().getClass().equals(object.getClass()));
+        this.listeners.removeIf(listener -> Objects.equals(listener.getParent(), object));
+        this.cache = this.listeners.toArray(new ListenerWrapper<?>[0]);
     }
 
     /**
@@ -53,6 +54,10 @@ public class EventBus {
      * @return True if the class is subscribed, false otherwise.
      */
     public boolean isSubscribed(Object object) {
-        return listeners.stream().anyMatch(listener -> listener.getParent().getClass().equals(object.getClass()));
+        for (ListenerWrapper<? extends Event> listener : this.cache) {
+            if (Objects.equals(listener.getParent(), object))
+                return true;
+        }
+        return false;
     }
 }

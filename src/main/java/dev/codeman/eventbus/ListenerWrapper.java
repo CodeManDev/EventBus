@@ -3,8 +3,8 @@ package dev.codeman.eventbus;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 
-public class ListenerWrapper<T extends Event> {
-    private final Listener<T> listener;
+public class ListenerWrapper<T extends Event> implements Comparable<ListenerWrapper<T>> {
+    private final Listener<Event> listener;
     private final int priority;
     private final Object parent;
     private final Class<?> type;
@@ -13,15 +13,15 @@ public class ListenerWrapper<T extends Event> {
         this.priority = field.getAnnotation(EventHandler.class).priority();
         this.parent = parent;
         this.type = ((Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0]);
-        Listener<T> listener = null;
+        Listener<Event> listener = null;
         try {
-            listener = (Listener<T>) field.get(parent);
+            listener = (Listener<Event>) field.get(parent);
         } catch (IllegalAccessException e) { e.printStackTrace(); }
         this.listener = listener;
     }
 
     public void call(Event event) {
-        this.listener.call((T) event);
+        this.listener.call(event);
     }
 
     public int getPriority() {
@@ -34,5 +34,10 @@ public class ListenerWrapper<T extends Event> {
 
     public Class<?> getType() {
         return type;
+    }
+
+    @Override
+    public int compareTo(ListenerWrapper<T> o) {
+        return Integer.compare(this.priority, o.priority);
     }
 }

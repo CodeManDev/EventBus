@@ -5,16 +5,15 @@ import dev.codeman.eventbus.EventHandler;
 
 import java.util.Arrays;
 
-public enum Main {
-    INSTANCE;
-
-    EventBus eventBus = new EventBus();
+public class Main {
 
     public static void main(String[] args) {
+        EventBus eventBus = new EventBus();
+        TestClass testClass = new TestClass();
 
         final long start = System.nanoTime();
 
-        INSTANCE.eventBus.subscribe(INSTANCE);
+        eventBus.subscribe(testClass);
 
         final double subscribeTime = (System.nanoTime() - start) / 1000000.0;
 
@@ -25,7 +24,7 @@ public enum Main {
         for (int j = 0; j < epochs; j++) {
             final long current = System.nanoTime();
             for (int i = 0; i < iterations; i++) {
-                INSTANCE.eventBus.publish(new TestEvent());
+                eventBus.publish(new TestEvent());
             }
             final double end = (System.nanoTime() - current) / 1000000.0;
             times[j] = end;
@@ -36,11 +35,14 @@ public enum Main {
 
         System.out.println("Average time per call: " + (Arrays.stream(times).average().getAsDouble() / iterations) + "ms");
 
-        INSTANCE.eventBus.unsubscribe(INSTANCE);
+        eventBus.unsubscribe(testClass);
     }
 
-    @EventHandler
-    public Listener<TestEvent> testListener = event -> {};
+    static class TestClass {
+        @EventHandler
+        public Listener<TestEvent> testListener = event -> {
+        };
+    }
 
     public static class TestEvent extends Event {}
 }
