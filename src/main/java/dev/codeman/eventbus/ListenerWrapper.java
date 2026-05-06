@@ -3,7 +3,7 @@ package dev.codeman.eventbus;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 
-public class ListenerWrapper<T extends Event> implements Comparable<ListenerWrapper<T>> {
+public class ListenerWrapper<T extends Event> {
     private final Listener<Event> listener;
     private final int priority;
     private final Object parent;
@@ -34,10 +34,5 @@ public class ListenerWrapper<T extends Event> implements Comparable<ListenerWrap
 
     public Class<?> getType() {
         return type;
-    }
-
-    @Override
-    public int compareTo(ListenerWrapper<T> o) {
-        return Integer.compare(this.priority, o.priority);
     }
 }

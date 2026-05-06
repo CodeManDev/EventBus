@@ -2,9 +2,10 @@ package dev.codeman.eventbus;
 
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class EventBus {
-    private final Queue<ListenerWrapper<? extends Event>> listeners = new PriorityQueue<>();
+    private final CopyOnWriteArrayList<ListenerWrapper<? extends Event>> listeners = new CopyOnWriteArrayList<>();
     private ListenerWrapper<?>[] cache = new ListenerWrapper[0];
 
     /**
@@ -34,6 +35,7 @@ public class EventBus {
             if (!field.isAccessible()) field.setAccessible(true);
             this.listeners.add(new ListenerWrapper<>(object, field));
         }
+        this.listeners.sort(Comparator.comparingInt(ListenerWrapper::getPriority));
         this.cache = this.listeners.toArray(new ListenerWrapper<?>[0]);
     }
 
