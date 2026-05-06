@@ -4,11 +4,11 @@ import java.lang.annotation.*;
 
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Handler {
+public @interface EventHandler {
 
     /**
      * The priority of the event.
      * @return The priority of the event.
      */
-    EventPriority value() default EventPriority.DEFAULT;
+    int value() default EventPriority.DEFAULT;
 }

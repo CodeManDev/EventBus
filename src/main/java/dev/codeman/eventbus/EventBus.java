@@ -1,7 +1,7 @@
 package dev.codeman.eventbus;
 
 import java.lang.reflect.Field;
-import java.util.Comparator;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class EventBus {
@@ -12,7 +12,7 @@ public class EventBus {
      *
      * @param event The event to call listeners for.
      */
-    public void call(Event event) {
+    public void publish(Event event) {
         for (ListenerWrapper<? extends Event> listenerWrapper : listeners) {
             if (event.getClass() != listenerWrapper.getType())
                 continue;
@@ -29,12 +29,12 @@ public class EventBus {
     public void subscribe(Object object) {
         if (isSubscribed(object)) return;
         for (Field field : object.getClass().getDeclaredFields()) {
-            if (!field.isAnnotationPresent(Handler.class) || !field.getType().isAssignableFrom(Listener.class))
+            if (!field.isAnnotationPresent(EventHandler.class) || !field.getType().isAssignableFrom(Listener.class))
                 continue;
             if (!field.isAccessible()) field.setAccessible(true);
             listeners.add(new ListenerWrapper<>(object, field));
         }
-        listeners.sort(Comparator.comparingInt(listener -> listener.getPriority().ordinal()));
+        listeners.sort(Comparator.comparingInt(ListenerWrapper::getPriority));
     }
 
     /**

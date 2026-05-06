@@ -5,12 +5,12 @@ import java.lang.reflect.ParameterizedType;
 
 public class ListenerWrapper<T extends Event> {
     private final Listener<T> listener;
-    private final EventPriority priority;
+    private final int priority;
     private final Object parent;
     private final Class<?> type;
 
     public ListenerWrapper(Object parent, Field field) {
-        this.priority = field.getAnnotation(Handler.class).value();
+        this.priority = field.getAnnotation(EventHandler.class).value();
         this.parent = parent;
         this.type = ((Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0]);
         Listener<T> listener = null;
@@ -24,7 +24,7 @@ public class ListenerWrapper<T extends Event> {
         this.listener.call((T) event);
     }
 
-    public EventPriority getPriority() {
+    public int getPriority() {
         return priority;
     }
 
