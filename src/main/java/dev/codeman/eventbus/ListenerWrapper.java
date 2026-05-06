@@ -4,7 +4,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 
 public class ListenerWrapper<T extends Event> {
-    private Listener<T> listener;
+    private final Listener<T> listener;
     private final EventPriority priority;
     private final Object parent;
     private final Class<?> type;
@@ -13,18 +13,14 @@ public class ListenerWrapper<T extends Event> {
         this.priority = field.getAnnotation(Handler.class).value();
         this.parent = parent;
         this.type = ((Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0]);
+        Listener<T> listener = null;
         try {
-            this.listener = (Listener<T>) field.get(parent);
-        } catch (Exception e) {
-            this.listener = null;
-            e.printStackTrace();
-        }
+            listener = (Listener<T>) field.get(parent);
+        } catch (IllegalAccessException e) { e.printStackTrace(); }
+        this.listener = listener;
     }
 
     public void call(Event event) {
-        if(!this.type.equals(event.getClass())) {
-            return;
-        }
         this.listener.call((T) event);
     }
 
@@ -36,4 +32,7 @@ public class ListenerWrapper<T extends Event> {
         return parent;
     }
 
+    public Class<?> getType() {
+        return type;
+    }
 }
