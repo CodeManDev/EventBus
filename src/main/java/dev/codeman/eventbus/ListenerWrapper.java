@@ -10,7 +10,7 @@ public class ListenerWrapper<T extends Event> {
     private final Class<?> type;
 
     public ListenerWrapper(Object parent, Field field) {
-        this.priority = field.getAnnotation(EventHandler.class).value();
+        this.priority = field.getAnnotation(EventHandler.class).priority();
         this.parent = parent;
         this.type = ((Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0]);
         Listener<T> listener = null;
