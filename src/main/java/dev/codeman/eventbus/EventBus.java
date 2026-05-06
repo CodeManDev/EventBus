@@ -3,10 +3,12 @@ package dev.codeman.eventbus;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class EventBus {
-    private final CopyOnWriteArrayList<ListenerWrapper<? extends Event>> listeners = new CopyOnWriteArrayList<>();
-    private ListenerWrapper<?>[] cache = new ListenerWrapper[0];
+    private final List<ListenerWrapper<? extends Event>> listeners = new ArrayList<>();
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private volatile ListenerWrapper<?>[] cache = new ListenerWrapper[0];
 
     /**
      * Call all listeners for the given event.
@@ -23,37 +25,47 @@ public class EventBus {
     }
 
     /**
-     * Subscribe a class to the event bus.
+     * Subscribe a object to the event bus.
      *
-     * @param object The class to subscribe.
+     * @param object The object to subscribe.
      */
     public void subscribe(Object object) {
-        if (isSubscribed(object)) return;
-        for (Field field : object.getClass().getDeclaredFields()) {
-            if (!field.isAnnotationPresent(EventHandler.class) || !field.getType().isAssignableFrom(Listener.class))
-                continue;
-            if (!field.isAccessible()) field.setAccessible(true);
-            this.listeners.add(new ListenerWrapper<>(object, field));
+        this.lock.writeLock().lock();
+        try {
+            if (isSubscribed(object)) return;
+            for (Field field : object.getClass().getDeclaredFields()) {
+                if (!field.isAnnotationPresent(EventHandler.class) || !field.getType().isAssignableFrom(Listener.class))
+                    continue;
+                if (!field.isAccessible()) field.setAccessible(true);
+                this.listeners.add(new ListenerWrapper<>(object, field));
+            }
+            this.listeners.sort(Comparator.comparingInt(ListenerWrapper::getPriority));
+            this.cache = this.listeners.toArray(new ListenerWrapper<?>[0]);
+        } finally {
+            this.lock.writeLock().unlock();
         }
-        this.listeners.sort(Comparator.comparingInt(ListenerWrapper::getPriority));
-        this.cache = this.listeners.toArray(new ListenerWrapper<?>[0]);
     }
 
     /**
-     * Unsubscribe a class from the event bus.
+     * Unsubscribe a object from the event bus.
      *
-     * @param object The class to unsubscribe.
+     * @param object The object to unsubscribe.
      */
     public void unsubscribe(Object object) {
-        this.listeners.removeIf(listener -> Objects.equals(listener.getParent(), object));
-        this.cache = this.listeners.toArray(new ListenerWrapper<?>[0]);
+        this.lock.writeLock().lock();
+        try {
+            this.listeners.removeIf(listener -> Objects.equals(listener.getParent(), object));
+            this.cache = this.listeners.toArray(new ListenerWrapper<?>[0]);
+        } finally {
+            this.lock.writeLock().unlock();
+        }
     }
 
     /**
-     * Check if a class is subscribed to the event bus.
+     * Check if a object is subscribed to the event bus.
      *
-     * @param object The class to check.
-     * @return True if the class is subscribed, false otherwise.
+     * @param object The object to check.
+     * @return True if the object is subscribed, false otherwise.
      */
     public boolean isSubscribed(Object object) {
         for (ListenerWrapper<? extends Event> listener : this.cache) {
